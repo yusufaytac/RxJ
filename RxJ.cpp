@@ -1,6 +1,7 @@
 #include "raylib.h"
 
-struct AnimData{
+struct AnimData
+{
     Rectangle Rec;
     Vector2 Pos;
     int Frame;
@@ -10,56 +11,95 @@ struct AnimData{
 
 int main()
 {
-    // window dimension
+    // window dimensions
     int WindowDimension[2];
     WindowDimension[0] = 400;
     WindowDimension[1] = 250;
 
     InitWindow(WindowDimension[0], WindowDimension[1], "Rai x Jin");
-    Texture2D Background = LoadTexture("textures/RxJBackground.png");
     
+    // background texture
+    Texture2D Background = LoadTexture("textures/RxJBackground.png");
 
-    // rai idle texture
-    Texture2D RaiIdle = LoadTexture("textures/rai.png");
+    // rai texture
+    Texture2D Rai = LoadTexture("textures/rai.png");
     AnimData RaiIdleData{
-        {RaiIdle.width/8, RaiIdle.height/7, RaiIdle.width/8, RaiIdle.height/7}, // rectangle rec
-        {-15, WindowDimension[1] - RaiIdleData.Rec.height}, // vector2 pos
-        1, // int frame
-        1.0/6.0, // float update time
-        0 // float move time
+        {Rai.width-Rai.width/8 * 7, Rai.height-Rai.height/7*6, Rai.width/8, Rai.height/7},
+        {-15, 170},
+        1,
+        1.0/7.0,
+        0.0
     };
 
+    // jin texture
+    Texture2D Jin = LoadTexture("textures/jin.png");
+    AnimData JinIdleData{
+        {Jin.width-Jin.width/7*6, 0, Jin.width/7, Jin.height/5},
+        {300, 147},
+        1,
+        1.0/7.0,
+        0.0
+    };
+
+    bool RaiIsWalking = false;
+    bool JinIsWalking = false;
+    SetTargetFPS(60);
     while(!WindowShouldClose())
-    {   
-        // open window
+    {
         BeginDrawing();
         ClearBackground(WHITE);
         DrawTexture(Background, 0, 0, WHITE);
-        
 
-        // delta time 
+        // deltatime
         const float DeltaTime = GetFrameTime();
         
         // rai idle animation
-        RaiIdleData.Pos.x = RaiIdleData.Pos.x; 
-        RaiIdleData.MoveTime = RaiIdleData.MoveTime + DeltaTime;
-        if(RaiIdleData.MoveTime >= RaiIdleData.UpdateTime)
+        if(!RaiIsWalking)
         {
-            RaiIdleData.MoveTime = 0.0;
-            RaiIdleData.Rec.x = RaiIdleData.Frame * RaiIdleData.Rec.width;
-            RaiIdleData.Frame = RaiIdleData.Frame + 1;
-            if(RaiIdleData.Frame > 4)
+            RaiIdleData.Pos.x = RaiIdleData.Pos.x;
+            RaiIdleData.MoveTime = RaiIdleData.MoveTime + DeltaTime;
+            if(RaiIdleData.MoveTime >= RaiIdleData.UpdateTime)
             {
-                RaiIdleData.Frame = 1;
+                RaiIdleData.MoveTime = 0.0;
+                RaiIdleData.Rec.x = RaiIdleData.Frame * RaiIdleData.Rec.width;
+                RaiIdleData.Frame = RaiIdleData.Frame + 1;
+                if(RaiIdleData.Frame >4)
+                {
+                    RaiIdleData.Frame = 1;
+                }
             }
         }
-        DrawTextureRec(RaiIdle, RaiIdleData.Rec, RaiIdleData.Pos, WHITE);
 
+        // jin idle animation
+        if(!JinIsWalking)
+        {
+            JinIdleData.Pos.x = JinIdleData.Pos.x;
+            JinIdleData.MoveTime = JinIdleData.MoveTime + DeltaTime;
+            if(JinIdleData.MoveTime >= JinIdleData.UpdateTime)
+            {
+                JinIdleData.MoveTime = 0.0;
+                JinIdleData.Rec.x = JinIdleData.Frame * JinIdleData.Rec.width;
+                JinIdleData.Frame = JinIdleData.Frame + 1;
+                if(JinIdleData.Frame >3)
+                {
+                    JinIdleData.Frame = 1;
+                }
+            }
+        }
+
+        if(!RaiIsWalking)
+        {
+            DrawTextureRec(Rai, RaiIdleData.Rec, RaiIdleData.Pos, WHITE);
+        }
+        if(!JinIsWalking)
+        {
+            DrawTextureRec(Jin, JinIdleData.Rec, JinIdleData.Pos, WHITE);
+        }
+        
         EndDrawing();
     }
-    
-    UnloadTexture(RaiIdle);
+    UnloadTexture(Jin);
+    UnloadTexture(Rai);
     UnloadTexture(Background);
-
     CloseWindow();
 }
