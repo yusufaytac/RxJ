@@ -24,6 +24,16 @@ int main()
     Texture2D Background = LoadTexture("textures/RxJBackground.png");
     Texture2D Rai = LoadTexture("textures/rai.png");
     Texture2D Jin = LoadTexture("textures/jin.png");
+    Texture2D Healthbar = LoadTexture("textures/rxjhealth-sheet.png");
+
+    // rai healthbar data
+    AnimData RaiHealthbarData{
+        {0, 0, Healthbar.width/7, Healthbar.height},
+        {19, 27},
+        0,
+        1.0,
+        0.0
+    };
 
     // rai idle data
     AnimData RaiIdleData{
@@ -36,7 +46,7 @@ int main()
 
     // rai run data
     const float RaiFrameWidth = Rai.width/8;
-    const int RaiVelocity = 150;
+    const int RaiVelocity = 200;
     AnimData RaiRunData{
         {Rai.width-Rai.width/8 * 7, Rai.height-Rai.height/7*5, Rai.width/8, Rai.height/7},
         {-15, 170},
@@ -55,6 +65,15 @@ int main()
         1.0/4.0,
         0.0
 
+    };
+
+    // rai hit data
+    AnimData RaiHitData{
+        {Rai.width-Rai.width/8 * 7, Rai.height-Rai.height/7*3, Rai.width/8, Rai.height/7},
+        {-15, 170},
+        1,
+        1.0/12.0,
+        0.0
     };
 
     // jin idle data
@@ -90,6 +109,9 @@ int main()
     
     bool JinIsGrounded = true;
     bool RaiIsGrounded = true;
+    bool RaiIsHit = false;
+    float RaiFacing = 1.0f;
+
     SetTargetFPS(60);
     while(!WindowShouldClose())
     {
@@ -98,11 +120,22 @@ int main()
         DrawTexture(Background, 0, 0, WHITE);
         bool RaiIsRunning = false;
         bool JinIsRunning = false;
+        
 
         // deltatime
         const float DeltaTime = GetFrameTime();
-        
+
         // rai idle animation
+
+        if(RaiFacing == -1.0f)
+        {
+            RaiIdleData.Rec.width = -RaiFrameWidth;
+        }
+        else
+        {
+            RaiIdleData.Rec.width = RaiFrameWidth;
+        }
+
         if(!RaiIsRunning)
         {
             RaiIdleData.Pos.x = RaiIdleData.Pos.x;
@@ -110,7 +143,7 @@ int main()
             if(RaiIdleData.MoveTime >= RaiIdleData.UpdateTime)
             {
                 RaiIdleData.MoveTime = 0.0;
-                RaiIdleData.Rec.x = RaiIdleData.Frame * RaiIdleData.Rec.width;
+                RaiIdleData.Rec.x = RaiIdleData.Frame * RaiFrameWidth;
                 RaiIdleData.Frame = RaiIdleData.Frame + 1;
                 if(RaiIdleData.Frame >4)
                 {
@@ -122,6 +155,7 @@ int main()
         if(IsKeyDown(KEY_D))
         {
             RaiIsRunning = true;
+            RaiFacing = 1.0f;
             RaiRunData.Rec.width = RaiFrameWidth;
             RaiRunData.Pos.x = RaiRunData.Pos.x + (RaiVelocity * DeltaTime);
             RaiRunData.MoveTime = RaiRunData.MoveTime + DeltaTime;
@@ -129,7 +163,7 @@ int main()
             if(RaiRunData.MoveTime >= RaiRunData.UpdateTime && RaiIsRunning == true)
             {
                 RaiRunData.MoveTime = 0;
-                RaiRunData.Rec.x = RaiRunData.Frame * RaiRunData.Rec.width;
+                RaiRunData.Rec.x = RaiRunData.Frame * RaiFrameWidth;
                 RaiRunData.Frame = RaiRunData.Frame + 1;
                 if(RaiRunData.Frame > 4)
                 {
@@ -141,6 +175,7 @@ int main()
         if(IsKeyDown(KEY_A))
         {
             RaiIsRunning = true;
+            RaiFacing = -1.0f;
             RaiRunData.Rec.width = -RaiFrameWidth;
             RaiRunData.Pos.x = RaiRunData.Pos.x + (-RaiVelocity * DeltaTime);
             RaiRunData.MoveTime = RaiRunData.MoveTime + DeltaTime;
@@ -159,9 +194,18 @@ int main()
         }
 
         // rai jump animation
+        if(RaiFacing == -1.0f) 
+        {
+            RaiJumpData.Rec.width = -RaiFrameWidth;
+        }
+        else 
+        {
+            RaiJumpData.Rec.width = RaiFrameWidth;
+        }
+
         RaiJumpData.Pos = RaiRunData.Pos;
         RaiVelocityY = RaiVelocityY + Gravity * DeltaTime;
-        if(IsKeyPressed(KEY_W) && RaiIsGrounded)
+        if(IsKeyDown(KEY_W) && RaiIsGrounded)
         {
             RaiVelocityY = RaiJumpPower;
             RaiIsGrounded = false;
@@ -185,11 +229,45 @@ int main()
             if(RaiJumpData.MoveTime >= RaiJumpData.UpdateTime)
             {
                 RaiJumpData.MoveTime = 0;
-                RaiJumpData.Rec.x = RaiJumpData.Frame * RaiJumpData.Rec.width;
+                RaiJumpData.Rec.x = RaiJumpData.Frame * RaiFrameWidth;
                 RaiJumpData.Frame = RaiJumpData.Frame + 1;
                 if(RaiJumpData.Frame > 2) 
                 {
                     RaiJumpData.Frame = 1; 
+                }
+            }
+        }
+
+        // rai hit animation
+        if(IsKeyPressed(KEY_SPACE))
+        {   
+            RaiIsHit = true;
+            if(RaiFacing == -1.0f)
+            {
+                RaiHitData.Rec.width = -RaiFrameWidth;
+            }
+            else
+            {
+                RaiHitData.Rec.width = RaiFrameWidth;
+            }
+            RaiHitData.Rec.x = RaiFrameWidth;
+            RaiHitData.Frame = 1;
+            RaiHitData.MoveTime = 0;
+        }
+        RaiHitData.Pos = RaiRunData.Pos;
+        if(RaiIsHit)
+        {
+            RaiHitData.MoveTime = RaiHitData.MoveTime + DeltaTime;
+            if(RaiHitData.MoveTime >= RaiHitData.UpdateTime)
+            {
+                RaiHitData.MoveTime = 0.0;
+                RaiHitData.Rec.x = RaiHitData.Frame * RaiFrameWidth;
+                RaiHitData.Frame = RaiHitData.Frame + 1; 
+
+                if(RaiHitData.Frame > 4)
+                {
+                    RaiIsHit = false;
+                    RaiHitData.Frame = 1;
                 }
             }
         }
@@ -254,7 +332,7 @@ int main()
         // jin jump animation
         JinJumpData.Pos = JinRunData.Pos;
         JinVelocityY = JinVelocityY + Gravity * DeltaTime;
-        if(IsKeyPressed(KEY_UP) && JinIsGrounded)
+        if(IsKeyDown(KEY_UP) && JinIsGrounded)
         {
             JinVelocityY = JinJumpPower;
             JinIsGrounded = false;
@@ -287,7 +365,11 @@ int main()
             }
         }
 
-        if(!RaiIsGrounded)
+        if(RaiIsHit)
+        {
+            DrawTextureRec(Rai, RaiHitData.Rec, RaiHitData.Pos, WHITE);
+        }
+        else if(!RaiIsGrounded)
         {
             DrawTextureRec(Rai, RaiJumpData.Rec, RaiJumpData.Pos, WHITE);            
         }
@@ -299,6 +381,9 @@ int main()
         {
             DrawTextureRec(Rai, RaiIdleData.Rec, RaiIdleData.Pos, WHITE);
         }
+
+        
+
 
         if(!JinIsGrounded)
         {
