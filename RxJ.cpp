@@ -18,6 +18,8 @@ int main()
 
     InitWindow(WindowDimension[0], WindowDimension[1], "Rai x Jin");
     
+    const int Gravity = 2000;
+
     // textures
     Texture2D Background = LoadTexture("textures/RxJBackground.png");
     Texture2D Rai = LoadTexture("textures/rai.png");
@@ -43,6 +45,18 @@ int main()
         0.0
     };
 
+    // rai jump data
+    const int RaiJumpPower = -600;
+    float RaiVelocityY = 0.0;
+    AnimData RaiJumpData{
+        {Rai.width-Rai.width/8 * 7, Rai.height-Rai.height/7*4, Rai.width/8, Rai.height/7},
+        {-15, 170},
+        1,
+        1.0/4.0,
+        0.0
+
+    };
+
     // jin idle data
     AnimData JinIdleData{
         {Jin.width-Jin.width/7*6, 0, Jin.width/7, Jin.height/5},
@@ -63,9 +77,19 @@ int main()
         0.0
     };
 
+    // jin jump data
+    const float JinJumpPower = -600;
+    float JinVelocityY = 0.0;
+    AnimData JinJumpData{
+        {Jin.width-Jin.width/7*6, Jin.height-Jin.height/5*3, Jin.width/7, Jin.height/5},
+        {300, 147},
+        1,
+        1.0/4.0,
+        0.0
+    };
     
-    
-    
+    bool JinIsGrounded = true;
+    bool RaiIsGrounded = true;
     SetTargetFPS(60);
     while(!WindowShouldClose())
     {
@@ -134,6 +158,42 @@ int main()
             }
         }
 
+        // rai jump animation
+        RaiJumpData.Pos = RaiRunData.Pos;
+        RaiVelocityY = RaiVelocityY + Gravity * DeltaTime;
+        if(IsKeyPressed(KEY_W) && RaiIsGrounded)
+        {
+            RaiVelocityY = RaiJumpPower;
+            RaiIsGrounded = false;
+        }
+
+        RaiRunData.Pos.y = RaiRunData.Pos.y + RaiVelocityY * DeltaTime;
+        RaiIdleData.Pos.y = RaiRunData.Pos.y;
+        RaiJumpData.Pos.y = RaiRunData.Pos.y;
+
+        if (RaiRunData.Pos.y >= 170) 
+        {
+            RaiRunData.Pos.y = 170;
+            RaiIdleData.Pos.y = 170;
+            RaiVelocityY = 0;
+            RaiIsGrounded = true;
+        }
+
+        if (!RaiIsGrounded)
+        {
+            RaiJumpData.MoveTime = RaiJumpData.MoveTime + DeltaTime;
+            if(RaiJumpData.MoveTime >= RaiJumpData.UpdateTime)
+            {
+                RaiJumpData.MoveTime = 0;
+                RaiJumpData.Rec.x = RaiJumpData.Frame * RaiJumpData.Rec.width;
+                RaiJumpData.Frame = RaiJumpData.Frame + 1;
+                if(RaiJumpData.Frame > 2) 
+                {
+                    RaiJumpData.Frame = 1; 
+                }
+            }
+        }
+
         // jin idle animation
         if(!JinIsRunning)
         {
@@ -191,22 +251,66 @@ int main()
             }
         }
 
-
-        if(!RaiIsRunning)
+        // jin jump animation
+        JinJumpData.Pos = JinRunData.Pos;
+        JinVelocityY = JinVelocityY + Gravity * DeltaTime;
+        if(IsKeyPressed(KEY_UP) && JinIsGrounded)
         {
-            DrawTextureRec(Rai, RaiIdleData.Rec, RaiIdleData.Pos, WHITE);
+            JinVelocityY = JinJumpPower;
+            JinIsGrounded = false;
         }
-        else
+
+        JinRunData.Pos.y = JinRunData.Pos.y + JinVelocityY * DeltaTime;
+        JinIdleData.Pos.y = JinRunData.Pos.y;
+        JinJumpData.Pos.y = JinRunData.Pos.y;
+
+        if (JinRunData.Pos.y >= 147) 
+        {
+            JinRunData.Pos.y = 147;
+            JinIdleData.Pos.y = 147;
+            JinVelocityY = 0;
+            JinIsGrounded = true;
+        }
+
+        if (!JinIsGrounded)
+        {
+            JinJumpData.MoveTime = JinJumpData.MoveTime + DeltaTime;
+            if(JinJumpData.MoveTime >= JinJumpData.UpdateTime)
+            {
+                JinJumpData.MoveTime = 0;
+                JinJumpData.Rec.x = JinJumpData.Frame * JinJumpData.Rec.width;
+                JinJumpData.Frame = JinJumpData.Frame + 1;
+                if(JinJumpData.Frame > 2) 
+                {
+                    JinJumpData.Frame = 1; 
+                }
+            }
+        }
+
+        if(!RaiIsGrounded)
+        {
+            DrawTextureRec(Rai, RaiJumpData.Rec, RaiJumpData.Pos, WHITE);            
+        }
+        else if(RaiIsRunning)
         {
             DrawTextureRec(Rai, RaiRunData.Rec, RaiRunData.Pos, WHITE);
         }
-        if(!JinIsRunning)
+        else
         {
-            DrawTextureRec(Jin, JinIdleData.Rec, JinIdleData.Pos, WHITE);
+            DrawTextureRec(Rai, RaiIdleData.Rec, RaiIdleData.Pos, WHITE);
+        }
+
+        if(!JinIsGrounded)
+        {
+           DrawTextureRec(Jin, JinJumpData.Rec, JinJumpData.Pos, WHITE);
+        }
+        else if(JinIsRunning)
+        {
+            DrawTextureRec(Jin, JinRunData.Rec, JinRunData.Pos, WHITE);
         }
         else
         {
-            DrawTextureRec(Jin, JinRunData.Rec, JinRunData.Pos, WHITE);
+             DrawTextureRec(Jin, JinIdleData.Rec, JinIdleData.Pos, WHITE);
         }
         
         EndDrawing();
