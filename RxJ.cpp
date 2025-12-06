@@ -53,7 +53,7 @@ int main()
 
     // rai run data
     const float RaiFrameWidth = Rai.width/8;
-    const int RaiVelocity = 200;
+    const int RaiVelocity = 250;
     AnimData RaiRunData{
         {Rai.width-Rai.width/8 * 7, Rai.height-Rai.height/7*5, Rai.width/8, Rai.height/7},
         {-15, 170},
@@ -103,7 +103,7 @@ int main()
 
     // jin run data
     const float JinFrameWidth = Jin.width/7;
-    const int JinVelocity = 150;
+    const int JinVelocity = 250;
     AnimData JinRunData{
         {Jin.width-Jin.width/7*6, Jin.height-Jin.height/5*4, Jin.width/7, Jin.height/5},
         {300, 147},
