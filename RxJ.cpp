@@ -21,7 +21,7 @@ int main()
     const int Gravity = 2000;
 
     // textures
-    Texture2D Background = LoadTexture("textures/RxJBackground.png");
+    Texture2D Background = LoadTexture("textures/RxJBackground_2.png");
     Texture2D Rai = LoadTexture("textures/rai.png");
     Texture2D Jin = LoadTexture("textures/jin.png");
     Texture2D Healthbar = LoadTexture("textures/rxjhealth-sheet.png");
@@ -106,11 +106,23 @@ int main()
         1.0/4.0,
         0.0
     };
+    // jin hit data
+    AnimData JinHitData{
+        {Jin.width-Jin.width/7*6, Jin.height-Jin.height/5*2, Jin.width/7, Jin.height/5},
+        {300, 147},
+        1,
+        1.0/12.0,
+        0.0
+    };
     
     bool JinIsGrounded = true;
+    float JinFacing = 1.0f;
+    bool JinIsHit = false;
+
     bool RaiIsGrounded = true;
     bool RaiIsHit = false;
     float RaiFacing = 1.0f;
+    
 
     SetTargetFPS(60);
     while(!WindowShouldClose())
@@ -120,7 +132,7 @@ int main()
         DrawTexture(Background, 0, 0, WHITE);
         bool RaiIsRunning = false;
         bool JinIsRunning = false;
-        
+        DrawTexture(Healthbar, 20, 30, WHITE);
 
         // deltatime
         const float DeltaTime = GetFrameTime();
@@ -273,6 +285,14 @@ int main()
         }
 
         // jin idle animation
+        if(JinFacing == -1.0f)
+        {
+            JinIdleData.Rec.width = -JinFrameWidth;
+        }
+        else
+        {
+            JinIdleData.Rec.width = JinFrameWidth;
+        }
         if(!JinIsRunning)
         {
             JinIdleData.Pos.x = JinIdleData.Pos.x;
@@ -280,7 +300,7 @@ int main()
             if(JinIdleData.MoveTime >= JinIdleData.UpdateTime)
             {
                 JinIdleData.MoveTime = 0.0;
-                JinIdleData.Rec.x = JinIdleData.Frame * JinIdleData.Rec.width;
+                JinIdleData.Rec.x = JinIdleData.Frame * JinFrameWidth;
                 JinIdleData.Frame = JinIdleData.Frame + 1;
                 if(JinIdleData.Frame >3)
                 {
@@ -293,6 +313,7 @@ int main()
         if(IsKeyDown(KEY_RIGHT))
         {
             JinIsRunning = true;
+            JinFacing = 1.0f;
             JinRunData.Rec.width = JinFrameWidth;
             JinRunData.Pos.x = JinRunData.Pos.x + (JinVelocity * DeltaTime);
             JinRunData.MoveTime = JinRunData.MoveTime + DeltaTime;
@@ -300,7 +321,7 @@ int main()
             if(JinRunData.MoveTime >= JinRunData.UpdateTime && JinIsRunning == true)
             {
                 JinRunData.MoveTime = 0;
-                JinRunData.Rec.x = JinRunData.Frame * JinRunData.Rec.width;
+                JinRunData.Rec.x = JinRunData.Frame * JinFrameWidth;
                 JinRunData.Frame = JinRunData.Frame + 1;
                 if(JinRunData.Frame > 4)
                 {
@@ -312,6 +333,7 @@ int main()
         if(IsKeyDown(KEY_LEFT))
         {
             JinIsRunning = true;
+            JinFacing = -1.0f;
             JinRunData.Rec.width = -JinFrameWidth;
             JinRunData.Pos.x = JinRunData.Pos.x + (-JinVelocity * DeltaTime);
             JinRunData.MoveTime = JinRunData.MoveTime + DeltaTime;
@@ -330,6 +352,14 @@ int main()
         }
 
         // jin jump animation
+        if(JinFacing == -1.0f)
+        {
+            JinJumpData.Rec.width = -JinFrameWidth;
+        }
+        else
+        {
+            JinJumpData.Rec.width = JinFrameWidth;
+        }
         JinJumpData.Pos = JinRunData.Pos;
         JinVelocityY = JinVelocityY + Gravity * DeltaTime;
         if(IsKeyDown(KEY_UP) && JinIsGrounded)
@@ -356,11 +386,50 @@ int main()
             if(JinJumpData.MoveTime >= JinJumpData.UpdateTime)
             {
                 JinJumpData.MoveTime = 0;
-                JinJumpData.Rec.x = JinJumpData.Frame * JinJumpData.Rec.width;
+                JinJumpData.Rec.x = JinJumpData.Frame * JinFrameWidth;
                 JinJumpData.Frame = JinJumpData.Frame + 1;
                 if(JinJumpData.Frame > 2) 
                 {
                     JinJumpData.Frame = 1; 
+                }
+            }
+        }
+
+        // jin hit animation
+        if(IsKeyPressed(KEY_ENTER))
+        {   
+            JinIsHit = true;
+            
+            if(JinFacing == -1.0f)
+            {
+                JinHitData.Rec.width = -JinFrameWidth;
+            }
+            else
+            {
+                JinHitData.Rec.width = JinFrameWidth;
+            }
+            
+            JinHitData.Rec.x = JinFrameWidth;
+            JinHitData.Frame = 1;
+            JinHitData.MoveTime = 0;
+        }
+        
+        JinHitData.Pos = JinRunData.Pos;
+        
+        if(JinIsHit)
+        {
+            JinHitData.MoveTime = JinHitData.MoveTime + DeltaTime;
+            if(JinHitData.MoveTime >= JinHitData.UpdateTime)
+            {
+                JinHitData.MoveTime = 0.0;
+                
+                JinHitData.Rec.x = JinHitData.Frame * JinFrameWidth;
+                JinHitData.Frame = JinHitData.Frame + 1; 
+
+                if(JinHitData.Frame > 4)
+                {
+                    JinIsHit = false;
+                    JinHitData.Frame = 1;
                 }
             }
         }
@@ -384,8 +453,11 @@ int main()
 
         
 
-
-        if(!JinIsGrounded)
+        if(JinIsHit)
+        {
+            DrawTextureRec(Jin, JinHitData.Rec, JinHitData.Pos, WHITE);
+        }
+        else if(!JinIsGrounded)
         {
            DrawTextureRec(Jin, JinJumpData.Rec, JinJumpData.Pos, WHITE);
         }
