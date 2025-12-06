@@ -18,6 +18,8 @@ int main()
 
     InitWindow(WindowDimension[0], WindowDimension[1], "Rai x Jin");
     
+    bool GameStarted = false;
+
     const int Gravity = 2000;
 
     // textures
@@ -27,6 +29,8 @@ int main()
     Texture2D Healthbar = LoadTexture("textures/rxjhealth-sheet.png");
     Texture2D RaiWin = LoadTexture("textures/raiwin.png");
     Texture2D JinWin = LoadTexture("textures/jinwin.png");
+    Texture2D StartScreen = LoadTexture("textures/startscreen.png");
+
 
 
     // rai healthbar data
@@ -148,6 +152,16 @@ int main()
     {
         BeginDrawing();
         ClearBackground(WHITE);
+        if(!GameStarted)
+        {
+            DrawTexture(StartScreen, 0, 0, WHITE);
+            if(IsKeyPressed(KEY_TAB))
+            {
+                GameStarted = true;
+            }
+        }
+        else
+        {
         DrawTexture(Background, 0, 0, WHITE);
         bool RaiIsRunning = false;
         bool JinIsRunning = false;
@@ -602,9 +616,10 @@ int main()
                 DrawTexture(RaiWin, 0, 0, WHITE);
             }
         }
-
+        }
         EndDrawing();
     }
+    UnloadTexture(StartScreen);
     UnloadTexture(RaiWin);
     UnloadTexture(JinWin);
     UnloadTexture(Healthbar);
