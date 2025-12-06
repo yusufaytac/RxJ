@@ -25,6 +25,9 @@ int main()
     Texture2D Rai = LoadTexture("textures/rai.png");
     Texture2D Jin = LoadTexture("textures/jin.png");
     Texture2D Healthbar = LoadTexture("textures/rxjhealth-sheet.png");
+    Texture2D RaiWin = LoadTexture("textures/raiwin.png");
+    Texture2D JinWin = LoadTexture("textures/jinwin.png");
+
 
     // rai healthbar data
     AnimData RaiHealthbarData{
@@ -76,6 +79,15 @@ int main()
         0.0
     };
 
+    // jin healthbar data
+    AnimData JinHealthbarData{
+        {0, 0, Healthbar.width/7, Healthbar.height},
+        {284, 27},
+        0,
+        1.0,
+        0.0
+    };
+
     // jin idle data
     AnimData JinIdleData{
         {Jin.width-Jin.width/7*6, 0, Jin.width/7, Jin.height/5},
@@ -116,13 +128,20 @@ int main()
     };
     
     bool JinIsGrounded = true;
-    float JinFacing = 1.0f;
+    float JinFacing = 1.0;
     bool JinIsHit = false;
 
     bool RaiIsGrounded = true;
     bool RaiIsHit = false;
-    float RaiFacing = 1.0f;
+    float RaiFacing = 1.0;
+
+    int RaiHealth = 7;
+    int JinHealth = 7;
+
+    bool RaiDamageDealt = false;
+    bool JinDamageDealt = false;
     
+    bool GameOver = false;
 
     SetTargetFPS(60);
     while(!WindowShouldClose())
@@ -132,14 +151,50 @@ int main()
         DrawTexture(Background, 0, 0, WHITE);
         bool RaiIsRunning = false;
         bool JinIsRunning = false;
-        DrawTexture(Healthbar, 20, 30, WHITE);
 
         // deltatime
         const float DeltaTime = GetFrameTime();
 
-        // rai idle animation
+        // update rain healthbar
+        int RaiFrame = 7 - RaiHealth;
+        if(RaiFrame > 6)
+        {
+            RaiFrame = 6;
+        }
+        RaiHealthbarData.Rec.x = RaiFrame * Healthbar.width/7;
 
-        if(RaiFacing == -1.0f)
+
+        // update jin healthbar
+        int JinFrame = 7 - JinHealth;
+        if(JinFrame > 6)
+        {
+            JinFrame = 6;
+        }
+        JinHealthbarData.Rec.x = JinFrame * Healthbar.width/7;
+        JinHealthbarData.Rec.width = -Healthbar.width/7;
+
+        if(!GameOver)
+        {
+        //rai collision box
+        Rectangle RaiCollisionBox;
+        RaiCollisionBox.x = RaiRunData.Pos.x + 40; 
+        RaiCollisionBox.y = RaiRunData.Pos.y + 20;
+        RaiCollisionBox.width = RaiFrameWidth - 70; 
+        RaiCollisionBox.height = (Rai.height/7) - 40;
+        //DrawRectangleLines(RaiCollisionBox.x, RaiCollisionBox.y, RaiCollisionBox.width, RaiCollisionBox.height, RED);
+
+        //jin collision box
+        Rectangle JinCollisionBox;
+        JinCollisionBox.x = JinRunData.Pos.x + 50; 
+        JinCollisionBox.y = JinRunData.Pos.y + 43;
+        JinCollisionBox.width = JinFrameWidth - 100; 
+        JinCollisionBox.height = (Jin.height/5) -72;
+        //DrawRectangleLines(JinCollisionBox.x, JinCollisionBox.y, JinCollisionBox.width, JinCollisionBox.height, GREEN);
+
+
+
+        // rai idle animation
+        if(RaiFacing == -1.0)
         {
             RaiIdleData.Rec.width = -RaiFrameWidth;
         }
@@ -164,7 +219,7 @@ int main()
             }
         }
         // rai run animation
-        if(IsKeyDown(KEY_D))
+        if(IsKeyDown(KEY_D) && RaiCollisionBox.x <= 360)
         {
             RaiIsRunning = true;
             RaiFacing = 1.0f;
@@ -184,10 +239,10 @@ int main()
 
             }
         }
-        if(IsKeyDown(KEY_A))
+        if(IsKeyDown(KEY_A) && RaiCollisionBox.x >= 5)
         {
             RaiIsRunning = true;
-            RaiFacing = -1.0f;
+            RaiFacing = -1.0;
             RaiRunData.Rec.width = -RaiFrameWidth;
             RaiRunData.Pos.x = RaiRunData.Pos.x + (-RaiVelocity * DeltaTime);
             RaiRunData.MoveTime = RaiRunData.MoveTime + DeltaTime;
@@ -206,7 +261,7 @@ int main()
         }
 
         // rai jump animation
-        if(RaiFacing == -1.0f) 
+        if(RaiFacing == -1.0) 
         {
             RaiJumpData.Rec.width = -RaiFrameWidth;
         }
@@ -254,7 +309,8 @@ int main()
         if(IsKeyPressed(KEY_SPACE))
         {   
             RaiIsHit = true;
-            if(RaiFacing == -1.0f)
+            RaiDamageDealt = false;
+            if(RaiFacing == -1.0)
             {
                 RaiHitData.Rec.width = -RaiFrameWidth;
             }
@@ -285,7 +341,7 @@ int main()
         }
 
         // jin idle animation
-        if(JinFacing == -1.0f)
+        if(JinFacing == -1.0)
         {
             JinIdleData.Rec.width = -JinFrameWidth;
         }
@@ -310,10 +366,10 @@ int main()
         }
         
         // jin run animation
-        if(IsKeyDown(KEY_RIGHT))
+        if(IsKeyDown(KEY_RIGHT) && JinCollisionBox.x <= 355)
         {
             JinIsRunning = true;
-            JinFacing = 1.0f;
+            JinFacing = 1.0;
             JinRunData.Rec.width = JinFrameWidth;
             JinRunData.Pos.x = JinRunData.Pos.x + (JinVelocity * DeltaTime);
             JinRunData.MoveTime = JinRunData.MoveTime + DeltaTime;
@@ -330,10 +386,10 @@ int main()
 
             }
         }
-        if(IsKeyDown(KEY_LEFT))
+        if(IsKeyDown(KEY_LEFT) && JinCollisionBox.x >= 0)
         {
             JinIsRunning = true;
-            JinFacing = -1.0f;
+            JinFacing = -1.0;
             JinRunData.Rec.width = -JinFrameWidth;
             JinRunData.Pos.x = JinRunData.Pos.x + (-JinVelocity * DeltaTime);
             JinRunData.MoveTime = JinRunData.MoveTime + DeltaTime;
@@ -352,7 +408,7 @@ int main()
         }
 
         // jin jump animation
-        if(JinFacing == -1.0f)
+        if(JinFacing == -1.0)
         {
             JinJumpData.Rec.width = -JinFrameWidth;
         }
@@ -399,8 +455,8 @@ int main()
         if(IsKeyPressed(KEY_ENTER))
         {   
             JinIsHit = true;
-            
-            if(JinFacing == -1.0f)
+            JinDamageDealt = false;
+            if(JinFacing == -1.0)
             {
                 JinHitData.Rec.width = -JinFrameWidth;
             }
@@ -433,6 +489,65 @@ int main()
                 }
             }
         }
+
+        // rai attack box
+        if(RaiIsHit)
+        {
+            Rectangle RaiAttackBox;
+            RaiAttackBox.y = RaiRunData.Pos.y + 32;
+            RaiAttackBox.width = 26;
+            RaiAttackBox.height = 25;
+        
+            if(RaiFacing == 1.0) 
+            {
+                RaiAttackBox.x = RaiCollisionBox.x + RaiCollisionBox.width - 15;
+            }
+            else 
+            {
+                RaiAttackBox.x = RaiCollisionBox.x - RaiAttackBox.width + 15;
+            }
+
+            //DrawRectangleLines(RaiAttackBox.x, RaiAttackBox.y, RaiAttackBox.width, RaiAttackBox.height, BLUE);
+
+            if(!RaiDamageDealt && CheckCollisionRecs(RaiAttackBox, JinCollisionBox))
+            {
+                JinHealth = JinHealth - 1;        
+                RaiDamageDealt = true; 
+            }
+        }
+
+        // Jin attack box
+        if(JinIsHit)
+        {
+            Rectangle JinAttackBox;
+            JinAttackBox.y = JinRunData.Pos.y + 40;
+            JinAttackBox.width = 30;
+            JinAttackBox.height = 40;
+
+            if(JinFacing == 1.0)
+            {
+                JinAttackBox.x = JinCollisionBox.x + JinCollisionBox.width - 20;
+            }
+            else
+            {
+                JinAttackBox.x = JinCollisionBox.x - JinAttackBox.width + 20;
+            }
+            
+            //DrawRectangleLines(JinAttackBox.x, JinAttackBox.y, JinAttackBox.width, JinAttackBox.height, ORANGE);
+
+            if(!JinDamageDealt && CheckCollisionRecs(JinAttackBox, RaiCollisionBox))
+            {
+                RaiHealth = RaiHealth - 1;
+                JinDamageDealt = true;
+            }
+        }
+
+
+
+        // draws
+
+        DrawTextureRec(Healthbar, RaiHealthbarData.Rec, RaiHealthbarData.Pos, WHITE);
+        DrawTextureRec(Healthbar, JinHealthbarData.Rec, JinHealthbarData.Pos, WHITE);
 
         if(RaiIsHit)
         {
@@ -470,8 +585,29 @@ int main()
              DrawTextureRec(Jin, JinIdleData.Rec, JinIdleData.Pos, WHITE);
         }
         
+        if (RaiHealth == 0 || JinHealth == 0)
+        {
+            GameOver = true;
+        }
+
+        }
+        else
+        {
+            if(RaiHealth == 0)
+            {
+                DrawTexture(JinWin, 0, 0, WHITE);
+            }
+            else if(JinHealth == 0)
+            {
+                DrawTexture(RaiWin, 0, 0, WHITE);
+            }
+        }
+
         EndDrawing();
     }
+    UnloadTexture(RaiWin);
+    UnloadTexture(JinWin);
+    UnloadTexture(Healthbar);
     UnloadTexture(Jin);
     UnloadTexture(Rai);
     UnloadTexture(Background);
