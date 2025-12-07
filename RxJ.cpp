@@ -23,7 +23,7 @@ int main()
     const int Gravity = 2000;
 
     // textures
-    Texture2D Background = LoadTexture("textures/RxJBackground_2.png");
+    Texture2D Background = LoadTexture("textures/rxjbackground.png");
     Texture2D Rai = LoadTexture("textures/rai.png");
     Texture2D Jin = LoadTexture("textures/jin.png");
     Texture2D Healthbar = LoadTexture("textures/rxjhealth-sheet.png");
@@ -152,6 +152,7 @@ int main()
     {
         BeginDrawing();
         ClearBackground(WHITE);
+
         if(!GameStarted)
         {
             DrawTexture(StartScreen, 0, 0, WHITE);
@@ -610,12 +611,37 @@ int main()
             if(RaiHealth == 0)
             {
                 DrawTexture(JinWin, 0, 0, WHITE);
+
             }
             else if(JinHealth == 0)
             {
                 DrawTexture(RaiWin, 0, 0, WHITE);
+
             }
+            if(IsKeyPressed(KEY_R))
+            {
+                GameOver = false;
+
+                RaiHealth = 7;
+                JinHealth = 7;
+
+                RaiRunData.Pos = {-15, 170};
+                RaiIdleData.Pos = {-15, 170};
+                RaiJumpData.Pos = {-15, 170};
+                RaiHitData.Pos = {-15, 170};
+
+                JinRunData.Pos = {300, 147};
+                JinIdleData.Pos = {300, 147};
+                JinJumpData.Pos = {300, 147};
+                JinHitData.Pos = {300, 147};
+
+                RaiIsHit = false;
+                JinIsHit = false;
+
+            }
+
         }
+
         }
         EndDrawing();
     }
