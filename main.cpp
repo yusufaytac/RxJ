@@ -3,23 +3,26 @@
 class Character
 {
 public:
+
     void tick(float DeltaTime);
     float DeltaTime = GetFrameTime();
-private:
-    Texture2D rTexture = LoadTexture("textures/rai.png");
-    Texture2D jTexture = LoadTexture("textures/jin.png");
-
-   
-
+    
+    // char variables
     Vector2 raiPos{-15, 170};
     int raiVel = 250;
     float raiJumpVel = 0.0f;
-    float gravity = 0.0f;
+    float raiGravity = 0.0f;
 
     bool isRaiWalking = false;
     bool isRaiOnGround = true;
     bool isRaiInAir = false;
+    bool raiHasHit = false;
 
+    float raiRightLeft = 1.0;
+    
+private:
+    Texture2D rTexture = LoadTexture("textures/rai.png");
+    Texture2D jTexture = LoadTexture("textures/jin.png");
 
     struct AnimData{
         Rectangle rec;
@@ -28,137 +31,124 @@ private:
         float updateTime;
         float runningTime;
     };
-    
+
+    float rFrameWidth = rTexture.width/8;
+    float rFrameHeight = rTexture.height/7;
+
     // rai idle data
-    AnimData raiIdle{
-        {rTexture.width-rTexture.width/8 * 7, rTexture.height-rTexture.height/7*6, rTexture.width/8, rTexture.height/7}, // rectangle rec
-        raiPos, // vector2 pos
-        1, // int frame
-        1.0/7.0, // float update time
-        0 // float running time
-    };
-
+    AnimData raiIdle{{rTexture.width-rFrameWidth * 7, rTexture.height-rFrameHeight*6, rFrameWidth, rFrameHeight}, raiPos, 1, 1.0/7.0, 0.0};
     // rai walk data
-    AnimData raiWalk{
-        {rTexture.width-rTexture.width/8 * 7, rTexture.height-rTexture.height/7*5, rTexture.width/8, rTexture.height/7},
-        raiPos,
-        1,
-        1.0/12.0,
-        0.0
-    };
-
+    AnimData raiWalk{{rTexture.width-rFrameWidth * 7, rTexture.height-rFrameHeight*5, rFrameWidth, rFrameHeight}, raiPos, 1, 1.0/12.0, 0.0};
     // rai jump data
-    AnimData raiJump{
-        {rTexture.width-rTexture.width/8 * 7, rTexture.height-rTexture.height/7*4, rTexture.width/8,rTexture.height/7},
-        {raiPos},
-        1,
-        1.0/4.0,
-        0.0
-    };
-
-    float rightLeft = 1.0;
+    AnimData raiJump{{rTexture.width-rFrameWidth * 7, rTexture.height-rFrameHeight*4, rFrameWidth, rFrameHeight}, raiPos, 1, 1.0/4.0, 0.0};
+    // rai hit data
+    AnimData raiHit{{rTexture.width-rFrameWidth * 7, rTexture.height-rFrameHeight*3,  rFrameWidth, rFrameHeight}, raiPos, 1,1.0/12.0, 0.0};
 
 };
+
 void Character::tick(float DeltaTime)
 {
     isRaiWalking = false;
 
-    if(IsKeyDown(KEY_D))
-    {
-        rightLeft = 1.0;
-        isRaiWalking = true;
-    }
-    if(IsKeyDown(KEY_A))
-    {
-        rightLeft = -1.0;
-        isRaiWalking = true;
-    }
+
+    if(IsKeyDown(KEY_D)){raiRightLeft = 1.0; isRaiWalking = true;}
+    if(IsKeyDown(KEY_A)){raiRightLeft = -1.0; isRaiWalking = true;}
     if(IsKeyPressed(KEY_W) && !isRaiInAir)
     {
         isRaiWalking = false;
         isRaiOnGround = false;
         isRaiInAir = true;
-
-        raiJumpVel = -1000.0f;
-        gravity = 70.0;
+        raiJumpVel = -700.0f;
+        raiGravity = 2000.0;
     }
-        
-    raiJumpVel += gravity;
+    if(IsKeyPressed(KEY_SPACE))
+    {
+        raiHasHit = true;
+        raiHit.frame = 1;
+        raiHit.runningTime = 0;
+    }
+
+    raiJumpVel += raiGravity * DeltaTime;
     raiPos.y = raiPos.y + (raiJumpVel * DeltaTime);
+    
     if(isRaiWalking)
     {
-        raiPos.x = raiPos.x + (rightLeft * raiVel * DeltaTime);
+        raiPos.x += raiRightLeft * raiVel * DeltaTime;
     }
     if(raiPos.y >= 170)
     {
         raiPos.y = 170;
         raiJumpVel = 0.0f;
-        gravity = 0.0f;
+        raiGravity = 0.0f;
         isRaiOnGround = true;
         isRaiInAir = false;
     }
-
-    if (isRaiInAir)
+    
+    // update rai animations
+    if(raiHasHit)
     {   
-        raiJump.rec.width = rTexture.width/8 * rightLeft;
-
+        // rai hit
+        raiHit.rec.width = rFrameWidth * raiRightLeft;
+        raiHit.runningTime += DeltaTime;
+        
+        if(raiHit.runningTime >= raiHit.updateTime)
+        {
+            raiHit.runningTime = 0.0;
+            raiHit.rec.x = raiHit.frame * rFrameWidth; 
+            raiHit.frame++;
+            if(raiHit.frame > 4) 
+            {
+                raiHit.frame = 1;
+                raiHasHit = false;
+            }
+        }
+        DrawTextureRec(rTexture, raiHit.rec, raiPos, WHITE);
+    }
+    else if (isRaiInAir)
+    {   
+        // rai jump
+        raiJump.rec.width = rFrameWidth * raiRightLeft;
         raiJump.runningTime = raiJump.runningTime + DeltaTime;
         if(raiJump.runningTime >= raiJump.updateTime)
         {
             raiJump.runningTime = 0;
-            raiJump.rec.x = raiJump.frame * raiJump.rec.width * rightLeft;
-            raiJump.frame = raiJump.frame + 1;
-            if(raiJump.frame > 2) 
-                {
-                    raiJump.frame = 1; 
-                }
+            raiJump.rec.x = raiJump.frame * rFrameWidth;
+            raiJump.frame ++;
+            if(raiJump.frame > 2){raiJump.frame = 1;}
         }
         DrawTextureRec(rTexture, raiJump.rec, raiPos, WHITE);
     }
+
     else if (isRaiWalking)
     {
-        // rai walk animation
-        raiWalk.rec.width = rTexture.width/8 * rightLeft;
-        
+        // rai walk
+        raiWalk.rec.width = rFrameWidth * raiRightLeft;
         raiWalk.runningTime = raiWalk.runningTime + DeltaTime;
         raiIdle.pos = raiWalk.pos;
         if(raiWalk.runningTime >= raiWalk.updateTime && isRaiWalking == true)
         {
             raiWalk.runningTime = 0;
-            raiWalk.rec.x = raiWalk.frame * raiWalk.rec.width * rightLeft;
-            raiWalk.frame = raiWalk.frame + 1;
-            if(raiWalk.frame > 4)
-            {
-                raiWalk.frame = 1;
-            }
-
+            raiWalk.rec.x = raiWalk.frame * rFrameWidth;
+            raiWalk.frame ++;
+            if(raiWalk.frame > 4){raiWalk.frame = 1;}
         }
         DrawTextureRec(rTexture, raiWalk.rec, raiPos, WHITE);
     }
     
     else
     {
-        // rai idle animation
-        raiIdle.rec.width = rTexture.width/8 * rightLeft;
-
+        // rai idle
+        raiIdle.rec.width = rFrameWidth * raiRightLeft;
         raiIdle.runningTime += DeltaTime;
         if(raiIdle.runningTime >= raiIdle.updateTime)
         {
             raiIdle.runningTime = 0.0f;
-            raiIdle.rec.x = raiIdle.rec.width * raiIdle.frame * rightLeft;
+            raiIdle.rec.x = rFrameWidth * raiIdle.frame;
             raiIdle.frame ++;
-            if(raiIdle.frame > 4)
-            {
-                raiIdle.frame = 1;
-                
-            }
+            if(raiIdle.frame > 4){raiIdle.frame = 1;}
         }
         DrawTextureRec(rTexture, raiIdle.rec, raiPos, WHITE);
     }
-
-
-
-
 }
 
 int main()
