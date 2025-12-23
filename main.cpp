@@ -7,19 +7,32 @@ public:
     void tick(float DeltaTime);
     float DeltaTime = GetFrameTime();
     
-    // char variables
+    // rai variables
     Vector2 raiPos{-15, 170};
     int raiVel = 250;
     float raiJumpVel = 0.0f;
     float raiGravity = 0.0f;
 
-    bool isRaiWalking = false;
-    bool isRaiOnGround = true;
-    bool isRaiInAir = false;
+    bool raiWalking = false;
+    bool raiOnGround = true;
+    bool raiInAir = false;
     bool raiHasHit = false;
 
     float raiRightLeft = 1.0;
     
+    // jin variables
+    Vector2 jinPos{300, 147};
+    int jinVel = 250;
+    float jinJumpVel = 0.0f;
+    float jinGravity = 0.0f;
+
+    bool jinWalking = false;
+    bool jinOnGround = true;
+    bool jinInAir = false;
+    bool jinHasHit = false;
+
+    float jinRightLeft = 1.0;
+
 private:
     Texture2D rTexture = LoadTexture("textures/rai.png");
     Texture2D jTexture = LoadTexture("textures/jin.png");
@@ -34,7 +47,6 @@ private:
 
     float rFrameWidth = rTexture.width/8;
     float rFrameHeight = rTexture.height/7;
-
     // rai idle data
     AnimData raiIdle{{rTexture.width-rFrameWidth * 7, rTexture.height-rFrameHeight*6, rFrameWidth, rFrameHeight}, raiPos, 1, 1.0/7.0, 0.0};
     // rai walk data
@@ -44,20 +56,33 @@ private:
     // rai hit data
     AnimData raiHit{{rTexture.width-rFrameWidth * 7, rTexture.height-rFrameHeight*3,  rFrameWidth, rFrameHeight}, raiPos, 1,1.0/12.0, 0.0};
 
+
+    float jFrameWidth = jTexture.width/7;
+    float jFrameHeight = jTexture.height/5;
+    // jin idle data
+    AnimData jinIdle{{jTexture.width-jFrameWidth*6, 0, jFrameWidth, jFrameHeight}, jinPos, 1, 1.0/7.0, 0.0};
+    // jin walk data
+    AnimData jinWalk{{jTexture.width-jFrameWidth*6, jTexture.height-jFrameHeight*4, jFrameWidth, jFrameHeight}, jinPos, 1, 1.0/12.0, 0.0};
+    // jin jump data
+    AnimData jinJump{{jTexture.width-jFrameWidth*6, jTexture.height-jFrameHeight*3, jFrameWidth, jFrameHeight}, jinPos, 1, 1.0/4.0, 0.0};
+    // jin hit data
+    AnimData jinHit{{jTexture.width-jFrameWidth*6, jTexture.height-jFrameHeight*2, jFrameWidth, jFrameHeight}, jinPos, 1, 1.0/12.0, 0.0};
+
 };
 
 void Character::tick(float DeltaTime)
 {
-    isRaiWalking = false;
+    raiWalking = false;
+    jinWalking = false;
 
-
-    if(IsKeyDown(KEY_D)){raiRightLeft = 1.0; isRaiWalking = true;}
-    if(IsKeyDown(KEY_A)){raiRightLeft = -1.0; isRaiWalking = true;}
-    if(IsKeyPressed(KEY_W) && !isRaiInAir)
+    // rai controller
+    if(IsKeyDown(KEY_D)){raiRightLeft = 1.0; raiWalking = true;}
+    if(IsKeyDown(KEY_A)){raiRightLeft = -1.0; raiWalking = true;}
+    if(IsKeyPressed(KEY_W) && !raiInAir)
     {
-        isRaiWalking = false;
-        isRaiOnGround = false;
-        isRaiInAir = true;
+        raiWalking = false;
+        raiOnGround = false;
+        raiInAir = true;
         raiJumpVel = -700.0f;
         raiGravity = 2000.0;
     }
@@ -71,7 +96,7 @@ void Character::tick(float DeltaTime)
     raiJumpVel += raiGravity * DeltaTime;
     raiPos.y = raiPos.y + (raiJumpVel * DeltaTime);
     
-    if(isRaiWalking)
+    if(raiWalking)
     {
         raiPos.x += raiRightLeft * raiVel * DeltaTime;
     }
@@ -80,10 +105,47 @@ void Character::tick(float DeltaTime)
         raiPos.y = 170;
         raiJumpVel = 0.0f;
         raiGravity = 0.0f;
-        isRaiOnGround = true;
-        isRaiInAir = false;
+        raiOnGround = true;
+        raiInAir = false;
     }
     
+    // jin controller
+    if(IsKeyDown(KEY_RIGHT)){jinRightLeft = 1.0; jinWalking = true;}
+    if(IsKeyDown(KEY_LEFT)){jinRightLeft = -1.0; jinWalking = true;}
+    if(IsKeyPressed(KEY_UP) && !jinInAir)
+    {
+        jinWalking = false;
+        jinOnGround = false;
+        jinInAir = true;
+        jinJumpVel = -700.0f;
+        jinGravity = 2000.0;
+    }
+    if(IsKeyPressed(KEY_ENTER))
+    {
+        jinHasHit = true;
+        jinHit.frame = 1;
+        jinHit.runningTime = 0;
+    }
+
+    jinJumpVel += jinGravity * DeltaTime;
+    jinPos.y = jinPos.y + (jinJumpVel * DeltaTime);
+    
+    if(jinWalking)
+    {
+        jinPos.x += jinRightLeft * jinVel * DeltaTime;
+    }
+    if(jinPos.y >= 147)
+    {
+        jinPos.y = 147;
+        jinJumpVel = 0.0f;
+        jinGravity = 0.0f;
+        jinOnGround = true;
+        jinInAir = false;
+    }
+
+
+
+
     // update rai animations
     if(raiHasHit)
     {   
@@ -104,7 +166,7 @@ void Character::tick(float DeltaTime)
         }
         DrawTextureRec(rTexture, raiHit.rec, raiPos, WHITE);
     }
-    else if (isRaiInAir)
+    else if (raiInAir)
     {   
         // rai jump
         raiJump.rec.width = rFrameWidth * raiRightLeft;
@@ -119,13 +181,13 @@ void Character::tick(float DeltaTime)
         DrawTextureRec(rTexture, raiJump.rec, raiPos, WHITE);
     }
 
-    else if (isRaiWalking)
+    else if (raiWalking)
     {
         // rai walk
         raiWalk.rec.width = rFrameWidth * raiRightLeft;
         raiWalk.runningTime = raiWalk.runningTime + DeltaTime;
         raiIdle.pos = raiWalk.pos;
-        if(raiWalk.runningTime >= raiWalk.updateTime && isRaiWalking == true)
+        if(raiWalk.runningTime >= raiWalk.updateTime && raiWalking)
         {
             raiWalk.runningTime = 0;
             raiWalk.rec.x = raiWalk.frame * rFrameWidth;
@@ -149,6 +211,73 @@ void Character::tick(float DeltaTime)
         }
         DrawTextureRec(rTexture, raiIdle.rec, raiPos, WHITE);
     }
+
+    // update jin animations
+    if(jinHasHit)
+    {   
+        // jin hit
+        jinHit.rec.width = jFrameWidth * jinRightLeft;
+        jinHit.runningTime += DeltaTime;
+        
+        if(jinHit.runningTime >= jinHit.updateTime)
+        {
+            jinHit.runningTime = 0.0;
+            jinHit.rec.x = jinHit.frame * jFrameWidth; 
+            jinHit.frame++;
+            if(jinHit.frame > 4) 
+            {
+                jinHit.frame = 1;
+                jinHasHit = false;
+            }
+        }
+        DrawTextureRec(jTexture, jinHit.rec, jinPos, WHITE);
+    }
+    else if (jinInAir)
+    {   
+        // jin jump
+        jinJump.rec.width = jFrameWidth * jinRightLeft;
+        jinJump.runningTime = jinJump.runningTime + DeltaTime;
+        if(jinJump.runningTime >= jinJump.updateTime)
+        {
+            jinJump.runningTime = 0;
+            jinJump.rec.x = jinJump.frame * jFrameWidth;
+            jinJump.frame ++;
+            if(jinJump.frame > 2){jinJump.frame = 1;}
+        }
+        DrawTextureRec(jTexture, jinJump.rec, jinPos, WHITE);
+    }
+
+    else if (jinWalking)
+    {
+        // jin walk
+        jinWalk.rec.width = jFrameWidth * jinRightLeft;
+        jinWalk.runningTime = jinWalk.runningTime + DeltaTime;
+        jinIdle.pos = jinWalk.pos;
+        if(jinWalk.runningTime >= jinWalk.updateTime && jinWalking)
+        {
+            jinWalk.runningTime = 0;
+            jinWalk.rec.x = jinWalk.frame * jFrameWidth;
+            jinWalk.frame ++;
+            if(jinWalk.frame > 4){jinWalk.frame = 1;}
+        }
+        DrawTextureRec(jTexture, jinWalk.rec, jinPos, WHITE);
+    }
+    
+    else
+    {
+        // jin idle
+        jinIdle.rec.width = jFrameWidth * jinRightLeft;
+        jinIdle.runningTime += DeltaTime;
+        if(jinIdle.runningTime >= jinIdle.updateTime)
+        {
+            jinIdle.runningTime = 0.0f;
+            jinIdle.rec.x = jFrameWidth * jinIdle.frame;
+            jinIdle.frame ++;
+            if(jinIdle.frame > 3){jinIdle.frame = 1;}
+        }
+        DrawTextureRec(jTexture, jinIdle.rec, jinPos, WHITE);
+    }
+
 }
 
 int main()
