@@ -3,39 +3,32 @@
 class Character
 {
 public:
-
     void tick(float DeltaTime);
     float DeltaTime = GetFrameTime();
     
     // rai variables
     Vector2 raiPos{-15, 170};
     int raiVel = 250;
-    float raiJumpVel = 0.0f;
-    float raiGravity = 0.0f;
-
-    bool raiWalking = false;
-    bool raiOnGround = true;
-    bool raiInAir = false;
-    bool raiHasHit = false;
-
+    float raiJumpVel = 0.0f, raiGravity = 0.0f;
+    bool raiWalking = false, raiOnGround = true, raiInAir = false, raiHasHit = false;
     float raiRightLeft = 1.0;
+    int raiHealth = 7;
+    bool raiDamageDealt = false;
     
     // jin variables
     Vector2 jinPos{300, 147};
     int jinVel = 250;
-    float jinJumpVel = 0.0f;
-    float jinGravity = 0.0f;
-
-    bool jinWalking = false;
-    bool jinOnGround = true;
-    bool jinInAir = false;
-    bool jinHasHit = false;
-
+    float jinJumpVel = 0.0f, jinGravity = 0.0f;
+    bool jinWalking = false, jinOnGround = true, jinInAir = false, jinHasHit = false;
     float jinRightLeft = 1.0;
+    int jinHealth = 7;
+    bool jinDamageDealt = false;
 
 private:
+    
     Texture2D rTexture = LoadTexture("textures/rai.png");
     Texture2D jTexture = LoadTexture("textures/jin.png");
+    Texture2D healthbar = LoadTexture("textures/rxjhealth-sheet.png");
 
     struct AnimData{
         Rectangle rec;
@@ -55,7 +48,8 @@ private:
     AnimData raiJump{{rTexture.width-rFrameWidth * 7, rTexture.height-rFrameHeight*4, rFrameWidth, rFrameHeight}, raiPos, 1, 1.0/4.0, 0.0};
     // rai hit data
     AnimData raiHit{{rTexture.width-rFrameWidth * 7, rTexture.height-rFrameHeight*3,  rFrameWidth, rFrameHeight}, raiPos, 1,1.0/12.0, 0.0};
-
+    // jin healthbar data
+    AnimData raiHealthbar{{0, 0, healthbar.width/7, healthbar.height}, {19, 27}, 0, 1.0, 0.0};
 
     float jFrameWidth = jTexture.width/7;
     float jFrameHeight = jTexture.height/5;
@@ -67,13 +61,31 @@ private:
     AnimData jinJump{{jTexture.width-jFrameWidth*6, jTexture.height-jFrameHeight*3, jFrameWidth, jFrameHeight}, jinPos, 1, 1.0/4.0, 0.0};
     // jin hit data
     AnimData jinHit{{jTexture.width-jFrameWidth*6, jTexture.height-jFrameHeight*2, jFrameWidth, jFrameHeight}, jinPos, 1, 1.0/12.0, 0.0};
-
+    // jin healthbar data
+    AnimData jinHealthbar{{0, 0, healthbar.width/7, healthbar.height}, {284, 27}, 0, 1.0, 0.0};
+    
 };
 
 void Character::tick(float DeltaTime)
 {
     raiWalking = false;
     jinWalking = false;
+   
+    // collisions
+    Rectangle raiCollisionBox;
+        raiCollisionBox.x = raiPos.x + 35; 
+        raiCollisionBox.y = raiPos.y + 25;
+        raiCollisionBox.width = 25; 
+        raiCollisionBox.height = 40;
+        DrawRectangleLines(raiCollisionBox.x, raiCollisionBox.y, raiCollisionBox.width, raiCollisionBox.height, GREEN);
+   
+    Rectangle jinCollisionBox;
+        jinCollisionBox.x = jinPos.x + 52; 
+        jinCollisionBox.y = jinPos.y + 48;
+        jinCollisionBox.width = 25; 
+        jinCollisionBox.height = 40;
+        DrawRectangleLines(jinCollisionBox.x, jinCollisionBox.y, jinCollisionBox.width, jinCollisionBox.height, BLUE);
+        
 
     // rai controller
     if(IsKeyDown(KEY_D)){raiRightLeft = 1.0; raiWalking = true;}
@@ -91,6 +103,7 @@ void Character::tick(float DeltaTime)
         raiHasHit = true;
         raiHit.frame = 1;
         raiHit.runningTime = 0;
+        raiDamageDealt = false;
     }
 
     raiJumpVel += raiGravity * DeltaTime;
@@ -125,6 +138,7 @@ void Character::tick(float DeltaTime)
         jinHasHit = true;
         jinHit.frame = 1;
         jinHit.runningTime = 0;
+        jinDamageDealt = false;
     }
 
     jinJumpVel += jinGravity * DeltaTime;
@@ -142,10 +156,7 @@ void Character::tick(float DeltaTime)
         jinOnGround = true;
         jinInAir = false;
     }
-
-
-
-
+    
     // update rai animations
     if(raiHasHit)
     {   
@@ -165,6 +176,23 @@ void Character::tick(float DeltaTime)
             }
         }
         DrawTextureRec(rTexture, raiHit.rec, raiPos, WHITE);
+
+        // rai attack box
+        Rectangle raiAttackBox;
+        raiAttackBox.y = raiPos.y + 32;
+        raiAttackBox.width = 25;
+        raiAttackBox.height = 25;
+        
+        if(raiRightLeft == 1.0) {raiAttackBox.x = raiCollisionBox.x + raiCollisionBox.width - 5;}
+        else {raiAttackBox.x = raiCollisionBox.x - raiAttackBox.width + 5;}
+
+        DrawRectangleLines(raiAttackBox.x, raiAttackBox.y, raiAttackBox.width, raiAttackBox.height, BLUE);
+
+        if(!raiDamageDealt && CheckCollisionRecs(raiAttackBox, jinCollisionBox))
+        {
+            jinHealth = jinHealth - 1;        
+            raiDamageDealt = true; 
+        }
     }
     else if (raiInAir)
     {   
@@ -180,7 +208,6 @@ void Character::tick(float DeltaTime)
         }
         DrawTextureRec(rTexture, raiJump.rec, raiPos, WHITE);
     }
-
     else if (raiWalking)
     {
         // rai walk
@@ -196,7 +223,6 @@ void Character::tick(float DeltaTime)
         }
         DrawTextureRec(rTexture, raiWalk.rec, raiPos, WHITE);
     }
-    
     else
     {
         // rai idle
@@ -211,14 +237,19 @@ void Character::tick(float DeltaTime)
         }
         DrawTextureRec(rTexture, raiIdle.rec, raiPos, WHITE);
     }
+    // update rai healthbar
+    int raiFrame = 7 - raiHealth;
+    if(raiFrame > 6) {raiFrame = 6;}
+    raiHealthbar.rec.x = raiFrame * healthbar.width/7;
+
+    DrawTextureRec(healthbar, raiHealthbar.rec, raiHealthbar.pos, WHITE);
 
     // update jin animations
     if(jinHasHit)
     {   
         // jin hit
         jinHit.rec.width = jFrameWidth * jinRightLeft;
-        jinHit.runningTime += DeltaTime;
-        
+        jinHit.runningTime += DeltaTime; 
         if(jinHit.runningTime >= jinHit.updateTime)
         {
             jinHit.runningTime = 0.0;
@@ -231,6 +262,23 @@ void Character::tick(float DeltaTime)
             }
         }
         DrawTextureRec(jTexture, jinHit.rec, jinPos, WHITE);
+        
+        Rectangle jinAttackBox;
+        jinAttackBox.y = jinPos.y + 50;
+        jinAttackBox.width = 25;
+        jinAttackBox.height = 25;
+
+        if(jinRightLeft == 1.0) {jinAttackBox.x = jinCollisionBox.x + jinCollisionBox.width - 10;}
+        else{jinAttackBox.x = jinCollisionBox.x - jinAttackBox.width + 10;}
+            
+        DrawRectangleLines(jinAttackBox.x, jinAttackBox.y, jinAttackBox.width, jinAttackBox.height, ORANGE);
+
+        if(!jinDamageDealt && CheckCollisionRecs(jinAttackBox, raiCollisionBox))
+        {
+            raiHealth = raiHealth - 1;
+            jinDamageDealt = true;
+        }
+
     }
     else if (jinInAir)
     {   
@@ -277,7 +325,13 @@ void Character::tick(float DeltaTime)
         }
         DrawTextureRec(jTexture, jinIdle.rec, jinPos, WHITE);
     }
+    // update jin healthbar
+    int jinFrame = 7 - jinHealth;
+    if(jinFrame > 6) {jinFrame = 6;}
+    jinHealthbar.rec.x = jinFrame * healthbar.width/7;
+    jinHealthbar.rec.width = -healthbar.width/7;
 
+    DrawTextureRec(healthbar, jinHealthbar.rec, jinHealthbar.pos, WHITE);
 }
 
 int main()
@@ -288,7 +342,6 @@ int main()
     InitWindow(windowWidth, windowHeight, "Rai vs Jin");
 
     Texture2D background = LoadTexture("textures/rxjbackground.png");
-
     Character rai;
     Character jin;
 
