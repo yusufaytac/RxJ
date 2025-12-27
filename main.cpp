@@ -77,14 +77,14 @@ void Character::tick(float DeltaTime)
         raiCollisionBox.y = raiPos.y + 25;
         raiCollisionBox.width = 25; 
         raiCollisionBox.height = 40;
-        DrawRectangleLines(raiCollisionBox.x, raiCollisionBox.y, raiCollisionBox.width, raiCollisionBox.height, GREEN);
+        //DrawRectangleLines(raiCollisionBox.x, raiCollisionBox.y, raiCollisionBox.width, raiCollisionBox.height, GREEN);
    
     Rectangle jinCollisionBox;
         jinCollisionBox.x = jinPos.x + 52; 
         jinCollisionBox.y = jinPos.y + 48;
         jinCollisionBox.width = 25; 
         jinCollisionBox.height = 40;
-        DrawRectangleLines(jinCollisionBox.x, jinCollisionBox.y, jinCollisionBox.width, jinCollisionBox.height, BLUE);
+        //DrawRectangleLines(jinCollisionBox.x, jinCollisionBox.y, jinCollisionBox.width, jinCollisionBox.height, BLUE);
         
 
     // rai controller
@@ -156,7 +156,7 @@ void Character::tick(float DeltaTime)
         jinOnGround = true;
         jinInAir = false;
     }
-    
+
     // update rai animations
     if(raiHasHit)
     {   
@@ -341,9 +341,14 @@ int main()
     const int windowHeight = 250;
     InitWindow(windowWidth, windowHeight, "Rai vs Jin");
 
+    Texture2D raiWin = LoadTexture("textures/raiwin.png");
+    Texture2D jinWin = LoadTexture("textures/jinwin.png");
+    Texture2D startScreen = LoadTexture("textures/startscreen.png");
     Texture2D background = LoadTexture("textures/rxjbackground.png");
     Character rai;
     Character jin;
+
+    bool gameOver = true;
 
     SetTargetFPS(60);
     while(!WindowShouldClose())
@@ -351,9 +356,33 @@ int main()
         BeginDrawing();
         ClearBackground(WHITE);
         DrawTexture(background, 0, 0, WHITE);
-        
-        rai.tick(GetFrameTime());
-        jin.tick(GetFrameTime());
+  
+        if(gameOver)
+        {
+            DrawTexture(startScreen, 0, 0, WHITE);
+            if(IsKeyDown(KEY_TAB))
+            {
+                gameOver = false;
+            }
+        }
+        else
+        {
+            if(rai.raiHealth != 0 && jin.jinHealth != 0)
+            {
+                rai.tick(GetFrameTime());
+                jin.tick(GetFrameTime());
+            }
+            else if(rai.raiHealth == 0)
+            {
+                DrawTexture(jinWin, 0, 0, WHITE);
+            }
+            else
+            {
+                DrawTexture(raiWin, 0, 0, WHITE);
+            }
+        }
+     
+
         
         EndDrawing();
     }
